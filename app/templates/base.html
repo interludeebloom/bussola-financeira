@@ -11,13 +11,19 @@
     form.inline { display: inline; }
     .flash { color: #a00; }
     label { display: block; margin-bottom: 0.8rem; }
+    .desejo-card { border: 1px solid #ccc; border-radius: 6px; padding: 0.8rem 1rem; margin-bottom: 1rem; }
+    .progress-track { background: #eee; border-radius: 4px; height: 10px; overflow: hidden; margin: 0.5rem 0; }
+    .progress-fill { background: #2a7; height: 100%; }
+    .guardar-form { display: inline-flex; gap: 0.3rem; align-items: center; }
+    .guardar-form input { width: 6rem; }
   </style>
 </head>
 <body>
   <h1><a href="{{ url_for('main.index') }}">Bússola Financeira</a></h1>
   <nav>
     <a href="{{ url_for('main.index') }}">Entradas e saídas</a> ·
-    <a href="{{ url_for('fixos.listar') }}">Gastos fixos</a>
+    <a href="{{ url_for('fixos.listar') }}">Gastos fixos</a> ·
+    <a href="{{ url_for('desejos.listar') }}">Lista de desejos</a>
   </nav>
 
   {% with messages = get_flashed_messages() %}

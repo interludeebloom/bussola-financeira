@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Lista de desejos</h2>
+  <p><a href="{{ url_for('desejos.novo') }}">+ Novo desejo</a></p>
+
+  {% for item in itens %}
+    {% set d = item.desejo %}
+    <div class="desejo-card">
+      <strong>{{ d.nome }}</strong> — R$ {{ "%.2f"|format(d.preco) }}
+
+      <div class="progress-track">
+        <div class="progress-fill" style="width: {{ d.progresso_pct }}%"></div>
+      </div>
+
+      {% if d.meta_atingida %}
+        <p>Meta atingida! Já guardou R$ {{ "%.2f"|format(d.guardado) }}.</p>
+      {% else %}
+        <p>
+          Guardado: R$ {{ "%.2f"|format(d.guardado) }} ({{ d.progresso_pct }}%) —
+          faltam R$ {{ "%.2f"|format(d.falta) }} — guarde R$ {{ "%.2f"|format(d.valor_mensal) }}/mês
+          pra comprar até {{ item.nome_mes_meta }}
+        </p>
+      {% endif %}
+
+      <form class="guardar-form" action="{{ url_for('desejos.guardar', id=d.id) }}" method="post">
+        <input type="number" step="0.01" min="0.01" name="valor_guardar" placeholder="valor">
+        <button type="submit">guardar</button>
+      </form>
+      <a href="{{ url_for('desejos.editar', id=d.id) }}">editar</a>
+      <form class="inline" action="{{ url_for('desejos.excluir', id=d.id) }}" method="post">
+        <button type="submit" onclick="return confirm('Excluir este desejo?')">excluir</button>
+      </form>
+    </div>
+  {% else %}
+    <p>Nenhum desejo cadastrado ainda.</p>
+  {% endfor %}
+{% endblock %}

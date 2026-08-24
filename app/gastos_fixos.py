@@ -4,13 +4,9 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from . import db
 from .models import GastoFixo, PagamentoFixo
+from .utils import NOMES_MESES
 
 fixos_bp = Blueprint("fixos", __name__, url_prefix="/gastos-fixos")
-
-NOMES_MESES = [
-    "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-]
 
 
 @fixos_bp.route("/")

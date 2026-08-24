@@ -12,11 +12,13 @@ def create_app():
     db.init_app(app)
 
     from . import models
+    from .desejos import desejos_bp
     from .gastos_fixos import fixos_bp
     from .routes import main_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(fixos_bp)
+    app.register_blueprint(desejos_bp)
 
     with app.app_context():
         db.create_all()
