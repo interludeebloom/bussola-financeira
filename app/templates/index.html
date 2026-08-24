@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <p><strong>Saldo total:</strong> R$ {{ "%.2f"|format(saldo) }}</p>
+  <p><a href="{{ url_for('main.nova') }}">+ Nova transação</a></p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Descrição</th>
+        <th>Tipo</th>
+        <th>Valor</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in transacoes %}
+        <tr>
+          <td>{{ t.data.strftime("%d/%m/%Y") }}</td>
+          <td>{{ t.descricao }}</td>
+          <td>{{ "Receita" if t.tipo == "receita" else "Despesa" }}</td>
+          <td>R$ {{ "%.2f"|format(t.valor_com_sinal) }}</td>
+          <td>
+            <a href="{{ url_for('main.editar', id=t.id) }}">editar</a>
+            <form class="inline" action="{{ url_for('main.excluir', id=t.id) }}" method="post">
+              <button type="submit" onclick="return confirm('Excluir esta transação?')">excluir</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5">Nenhuma transação cadastrada ainda.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

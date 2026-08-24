@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bússola Financeira</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { text-align: left; padding: 0.4rem; border-bottom: 1px solid #ccc; }
+    form.inline { display: inline; }
+    .flash { color: #a00; }
+    label { display: block; margin-bottom: 0.8rem; }
+  </style>
+</head>
+<body>
+  <h1><a href="{{ url_for('main.index') }}">Bússola Financeira</a></h1>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul class="flash">
+        {% for mensagem in messages %}
+          <li>{{ mensagem }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</body>
+</html>
