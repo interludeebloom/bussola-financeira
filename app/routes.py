@@ -5,7 +5,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from . import db
 from .models import Transacao
 
-main_bp = Blueprint("main", __name__)
+main_bp = Blueprint("main", __name__, url_prefix="/transacoes")
 
 TIPOS_VALIDOS = ("receita", "despesa")
 

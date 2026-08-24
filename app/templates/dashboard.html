@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Resumo — {{ nome_mes }}/{{ ano }}</h2>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="label">Receitas do mês</div>
+      <div class="value positivo">R$ {{ "%.2f"|format(total_receitas) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Despesas do mês</div>
+      <div class="value negativo">R$ {{ "%.2f"|format(total_despesas) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Saldo do mês</div>
+      <div class="value {{ 'positivo' if saldo_mes >= 0 else 'negativo' }}">R$ {{ "%.2f"|format(saldo_mes) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Faturas em aberto</div>
+      <div class="value negativo">R$ {{ "%.2f"|format(total_faturas_aberto) }}</div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Entradas x saídas do mês</h3>
+      <canvas id="graficoPizza"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Faturas em aberto por banco</h3>
+      <canvas id="graficoBarra"></canvas>
+    </div>
+  </div>
+
+  <h3>Progresso das metas</h3>
+  {% for d in desejos %}
+    <div class="card">
+      <strong>{{ d.nome }}</strong>
+      <div class="progress-track"><div class="progress-fill" style="width: {{ d.progresso_pct }}%"></div></div>
+      <span>{{ d.progresso_pct }}% guardado{{ " — meta atingida" if d.meta_atingida else "" }}</span>
+    </div>
+  {% else %}
+    <p>Nenhuma meta cadastrada ainda. <a href="{{ url_for('desejos.listar') }}">Cadastre uma na Lista de desejos</a>.</p>
+  {% endfor %}
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    new Chart(document.getElementById('graficoPizza'), {
+      type: 'pie',
+      data: {
+        labels: ['Receitas', 'Despesas'],
+        datasets: [{
+          data: [{{ total_receitas }}, {{ total_despesas }}],
+          backgroundColor: ['#0e6e5a', '#b3261e']
+        }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    new Chart(document.getElementById('graficoBarra'), {
+      type: 'bar',
+      data: {
+        labels: [{% for f in faturas_mes %}{{ f.banco | tojson }}{{ "," if not loop.last }}{% endfor %}],
+        datasets: [{
+          label: 'Total (R$)',
+          data: [{% for f in faturas_mes %}{{ f.total }}{{ "," if not loop.last }}{% endfor %}],
+          backgroundColor: '#0e6e5a'
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  </script>
+{% endblock %}
