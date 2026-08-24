@@ -78,3 +78,37 @@ class Desejo(db.Model):
         if self.meta_atingida:
             return 0.0
         return self.falta / self.meses_restantes
+
+
+class Banco(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(80), nullable=False, unique=True)
+
+    faturas = db.relationship("Fatura", backref="banco", cascade="all, delete-orphan")
+
+
+class Fatura(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    banco_id = db.Column(db.Integer, db.ForeignKey("banco.id"), nullable=False)
+    ano = db.Column(db.Integer, nullable=False)
+    mes = db.Column(db.Integer, nullable=False)  # 1 a 12
+
+    gastos = db.relationship(
+        "GastoFatura", backref="fatura", cascade="all, delete-orphan", order_by="GastoFatura.data"
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("banco_id", "ano", "mes", name="uq_fatura_banco_mes"),
+    )
+
+    @property
+    def total(self):
+        return sum(g.valor for g in self.gastos)
+
+
+class GastoFatura(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fatura_id = db.Column(db.Integer, db.ForeignKey("fatura.id"), nullable=False)
+    descricao = db.Column(db.String(120), nullable=False)
+    valor = db.Column(db.Float, nullable=False)
+    data = db.Column(db.Date, nullable=True)

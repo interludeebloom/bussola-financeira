@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Bancos</h2>
+  <p><a href="{{ url_for('faturas.ver') }}">Voltar pra faturas</a></p>
+
+  <form method="post" action="{{ url_for('faturas.novo_banco') }}">
+    <label>Nome do banco <input type="text" name="nome" required></label>
+    <button type="submit">Adicionar</button>
+  </form>
+
+  <table>
+    <thead><tr><th>Nome</th><th></th></tr></thead>
+    <tbody>
+      {% for b in bancos %}
+        <tr>
+          <td>{{ b.nome }}</td>
+          <td>
+            <form class="inline" action="{{ url_for('faturas.excluir_banco', id=b.id) }}" method="post">
+              <button type="submit" onclick="return confirm('Excluir este banco? Isso também apaga as faturas ligadas a ele.')">excluir</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="2">Nenhum banco cadastrado ainda.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
