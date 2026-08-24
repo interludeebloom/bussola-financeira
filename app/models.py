@@ -15,6 +15,17 @@ class Transacao(db.Model):
     def valor_com_sinal(self):
         return self.valor if self.tipo == "receita" else -self.valor
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "descricao": self.descricao,
+            "valor": self.valor,
+            "tipo": self.tipo,
+            "data": self.data.isoformat(),
+            "categoria": self.categoria,
+            "valor_com_sinal": self.valor_com_sinal,
+        }
+
 
 class GastoFixo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -31,6 +42,19 @@ class GastoFixo(db.Model):
         return PagamentoFixo.query.filter_by(
             gasto_fixo_id=self.id, ano=ano, mes=mes
         ).first()
+
+    def to_dict(self, ano=None, mes=None):
+        dados = {
+            "id": self.id,
+            "nome": self.nome,
+            "valor": self.valor,
+            "dia_vencimento": self.dia_vencimento,
+            "ativo": self.ativo,
+        }
+        if ano is not None and mes is not None:
+            pagamento = self.pagamento_do_mes(ano, mes)
+            dados["pago"] = bool(pagamento and pagamento.pago)
+        return dados
 
 
 class PagamentoFixo(db.Model):
@@ -80,12 +104,29 @@ class Desejo(db.Model):
             return 0.0
         return self.falta / self.meses_restantes
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nome": self.nome,
+            "preco": self.preco,
+            "guardado": self.guardado,
+            "data_meta": self.data_meta.isoformat(),
+            "falta": self.falta,
+            "meta_atingida": self.meta_atingida,
+            "progresso_pct": self.progresso_pct,
+            "meses_restantes": self.meses_restantes,
+            "valor_mensal": self.valor_mensal,
+        }
+
 
 class Banco(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(80), nullable=False, unique=True)
 
     faturas = db.relationship("Fatura", backref="banco", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {"id": self.id, "nome": self.nome}
 
 
 class Fatura(db.Model):
@@ -113,3 +154,11 @@ class GastoFatura(db.Model):
     descricao = db.Column(db.String(120), nullable=False)
     valor = db.Column(db.Float, nullable=False)
     data = db.Column(db.Date, nullable=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "descricao": self.descricao,
+            "valor": self.valor,
+            "data": self.data.isoformat() if self.data else None,
+        }

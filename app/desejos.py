@@ -1,119 +1,90 @@
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, jsonify, request
 
 from . import db
 from .models import Desejo
-from .utils import NOMES_MESES
 
-desejos_bp = Blueprint("desejos", __name__, url_prefix="/desejos")
+desejos_bp = Blueprint("desejos", __name__, url_prefix="/api/metas")
 
 
 @desejos_bp.route("/")
 def listar():
     desejos = Desejo.query.order_by(Desejo.data_meta).all()
-    itens = [
-        {"desejo": d, "nome_mes_meta": NOMES_MESES[d.data_meta.month]}
-        for d in desejos
-    ]
-    return render_template("desejos.html", itens=itens)
+    return jsonify([d.to_dict() for d in desejos])
 
 
-@desejos_bp.route("/novo", methods=["GET", "POST"])
-def novo():
-    if request.method == "POST":
-        erro = _validar_formulario(request.form)
-        if erro:
-            flash(erro)
-            return render_template("form_desejo.html", desejo=None, valores=_valores_de_form(request.form)), 400
+@desejos_bp.route("/", methods=["POST"])
+def criar():
+    dados = request.get_json(silent=True) or {}
+    erro = _validar(dados)
+    if erro:
+        return jsonify({"erro": erro}), 400
 
-        desejo = Desejo(
-            nome=request.form["nome"].strip(),
-            preco=float(request.form["preco"]),
-            data_meta=datetime.strptime(request.form["data_meta"], "%Y-%m-%d").date(),
-        )
-        db.session.add(desejo)
-        db.session.commit()
-        return redirect(url_for("desejos.listar"))
-
-    return render_template("form_desejo.html", desejo=None, valores=_valores_padrao())
+    desejo = Desejo(
+        nome=dados["nome"].strip(),
+        preco=float(dados["preco"]),
+        data_meta=datetime.strptime(dados["data_meta"], "%Y-%m-%d").date(),
+    )
+    db.session.add(desejo)
+    db.session.commit()
+    return jsonify(desejo.to_dict()), 201
 
 
-@desejos_bp.route("/editar/<int:id>", methods=["GET", "POST"])
-def editar(id):
+@desejos_bp.route("/<int:id>", methods=["PUT"])
+def atualizar(id):
     desejo = Desejo.query.get_or_404(id)
+    dados = request.get_json(silent=True) or {}
+    erro = _validar(dados)
+    if erro:
+        return jsonify({"erro": erro}), 400
 
-    if request.method == "POST":
-        erro = _validar_formulario(request.form)
-        if erro:
-            flash(erro)
-            return render_template("form_desejo.html", desejo=desejo, valores=_valores_de_form(request.form)), 400
-
-        desejo.nome = request.form["nome"].strip()
-        desejo.preco = float(request.form["preco"])
-        desejo.data_meta = datetime.strptime(request.form["data_meta"], "%Y-%m-%d").date()
-        db.session.commit()
-        return redirect(url_for("desejos.listar"))
-
-    return render_template("form_desejo.html", desejo=desejo, valores=_valores_de_desejo(desejo))
+    desejo.nome = dados["nome"].strip()
+    desejo.preco = float(dados["preco"])
+    desejo.data_meta = datetime.strptime(dados["data_meta"], "%Y-%m-%d").date()
+    db.session.commit()
+    return jsonify(desejo.to_dict())
 
 
-@desejos_bp.route("/excluir/<int:id>", methods=["POST"])
+@desejos_bp.route("/<int:id>", methods=["DELETE"])
 def excluir(id):
     desejo = Desejo.query.get_or_404(id)
     db.session.delete(desejo)
     db.session.commit()
-    return redirect(url_for("desejos.listar"))
+    return "", 204
 
 
 @desejos_bp.route("/<int:id>/guardar", methods=["POST"])
 def guardar(id):
     desejo = Desejo.query.get_or_404(id)
-    valor = request.form.get("valor_guardar", "")
+    dados = request.get_json(silent=True) or {}
     try:
-        valor = float(valor)
-    except ValueError:
+        valor = float(dados.get("valor", 0))
+    except (TypeError, ValueError):
         valor = 0
 
-    if valor > 0:
-        desejo.guardado += valor
-        db.session.commit()
-    else:
-        flash("Informe um valor maior que zero para guardar.")
+    if valor <= 0:
+        return jsonify({"erro": "Informe um valor maior que zero para guardar."}), 400
 
-    return redirect(url_for("desejos.listar"))
+    desejo.guardado += valor
+    db.session.commit()
+    return jsonify(desejo.to_dict())
 
 
-def _validar_formulario(form):
-    nome = form.get("nome", "").strip()
-    preco = form.get("preco", "")
-    data_meta = form.get("data_meta", "")
+def _validar(dados):
+    nome = (dados.get("nome") or "").strip()
+    preco = dados.get("preco", "")
+    data_meta = dados.get("data_meta", "")
 
     if not nome:
         return "Nome é obrigatório."
     try:
         if float(preco) <= 0:
             return "Preço precisa ser maior que zero."
-    except ValueError:
+    except (TypeError, ValueError):
         return "Preço inválido."
     try:
         datetime.strptime(data_meta, "%Y-%m-%d")
-    except ValueError:
+    except (TypeError, ValueError):
         return "Data da meta inválida."
     return None
-
-
-def _valores_padrao():
-    return {"nome": "", "preco": "", "data_meta": ""}
-
-
-def _valores_de_desejo(desejo):
-    return {"nome": desejo.nome, "preco": desejo.preco, "data_meta": desejo.data_meta.isoformat()}
-
-
-def _valores_de_form(form):
-    return {
-        "nome": form.get("nome", ""),
-        "preco": form.get("preco", ""),
-        "data_meta": form.get("data_meta", ""),
-    }

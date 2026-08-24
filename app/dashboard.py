@@ -1,12 +1,12 @@
 from calendar import monthrange
 from datetime import date
 
-from flask import Blueprint, render_template
+from flask import Blueprint, jsonify
 
 from .models import Banco, Desejo, Fatura, Transacao
 from .utils import NOMES_MESES
 
-dashboard_bp = Blueprint("dashboard", __name__)
+dashboard_bp = Blueprint("dashboard", __name__, url_prefix="/api/dashboard")
 
 
 @dashboard_bp.route("/")
@@ -40,15 +40,14 @@ def index():
         total_faturas_aberto += total
         faturas_mes.append({"banco": banco.nome, "total": total})
 
-    return render_template(
-        "dashboard.html",
-        nome_mes=NOMES_MESES[mes],
-        ano=ano,
-        total_receitas=total_receitas,
-        total_despesas=total_despesas,
-        saldo_mes=total_receitas - total_despesas,
-        desejos=desejos,
-        faturas_mes=faturas_mes,
-        total_faturas_aberto=total_faturas_aberto,
-        despesas_por_categoria=despesas_por_categoria,
-    )
+    return jsonify({
+        "nome_mes": NOMES_MESES[mes],
+        "ano": ano,
+        "total_receitas": total_receitas,
+        "total_despesas": total_despesas,
+        "saldo_mes": total_receitas - total_despesas,
+        "desejos": [d.to_dict() for d in desejos],
+        "faturas_mes": faturas_mes,
+        "total_faturas_aberto": total_faturas_aberto,
+        "despesas_por_categoria": [{"categoria": c, "total": t} for c, t in despesas_por_categoria],
+    })

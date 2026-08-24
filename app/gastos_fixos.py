@@ -1,12 +1,11 @@
 from datetime import date
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, jsonify, request
 
 from . import db
 from .models import GastoFixo, PagamentoFixo
-from .utils import NOMES_MESES
 
-fixos_bp = Blueprint("fixos", __name__, url_prefix="/gastos-fixos")
+fixos_bp = Blueprint("fixos", __name__, url_prefix="/api/gastos-fixos")
 
 
 @fixos_bp.route("/")
@@ -16,72 +15,57 @@ def listar():
 
     gastos = GastoFixo.query.filter_by(ativo=True).order_by(GastoFixo.dia_vencimento).all()
 
-    itens = []
-    total_previsto = 0.0
-    total_pago = 0.0
-    for gasto in gastos:
-        pagamento = gasto.pagamento_do_mes(ano, mes)
-        pago = bool(pagamento and pagamento.pago)
-        total_previsto += gasto.valor
-        if pago:
-            total_pago += gasto.valor
-        itens.append({"gasto": gasto, "pago": pago})
+    itens = [g.to_dict(ano=ano, mes=mes) for g in gastos]
+    total_previsto = sum(g.valor for g in gastos)
+    total_pago = sum(g.valor for g, item in zip(gastos, itens) if item["pago"])
 
-    return render_template(
-        "gastos_fixos.html",
-        itens=itens,
-        total_previsto=total_previsto,
-        total_pago=total_pago,
-        nome_mes=NOMES_MESES[mes],
-        ano=ano,
+    return jsonify({
+        "itens": itens,
+        "total_previsto": total_previsto,
+        "total_pago": total_pago,
+        "ano": ano,
+        "mes": mes,
+    })
+
+
+@fixos_bp.route("/", methods=["POST"])
+def criar():
+    dados = request.get_json(silent=True) or {}
+    erro = _validar(dados)
+    if erro:
+        return jsonify({"erro": erro}), 400
+
+    gasto = GastoFixo(
+        nome=dados["nome"].strip(),
+        valor=float(dados["valor"]),
+        dia_vencimento=int(dados["dia_vencimento"]),
     )
+    db.session.add(gasto)
+    db.session.commit()
+    return jsonify(gasto.to_dict()), 201
 
 
-@fixos_bp.route("/novo", methods=["GET", "POST"])
-def novo():
-    if request.method == "POST":
-        erro = _validar_formulario(request.form)
-        if erro:
-            flash(erro)
-            return render_template("form_gasto_fixo.html", gasto=None, valores=_valores_de_form(request.form)), 400
-
-        gasto = GastoFixo(
-            nome=request.form["nome"].strip(),
-            valor=float(request.form["valor"]),
-            dia_vencimento=int(request.form["dia_vencimento"]),
-        )
-        db.session.add(gasto)
-        db.session.commit()
-        return redirect(url_for("fixos.listar"))
-
-    return render_template("form_gasto_fixo.html", gasto=None, valores=_valores_padrao())
-
-
-@fixos_bp.route("/editar/<int:id>", methods=["GET", "POST"])
-def editar(id):
+@fixos_bp.route("/<int:id>", methods=["PUT"])
+def atualizar(id):
     gasto = GastoFixo.query.get_or_404(id)
+    dados = request.get_json(silent=True) or {}
+    erro = _validar(dados)
+    if erro:
+        return jsonify({"erro": erro}), 400
 
-    if request.method == "POST":
-        erro = _validar_formulario(request.form)
-        if erro:
-            flash(erro)
-            return render_template("form_gasto_fixo.html", gasto=gasto, valores=_valores_de_form(request.form)), 400
-
-        gasto.nome = request.form["nome"].strip()
-        gasto.valor = float(request.form["valor"])
-        gasto.dia_vencimento = int(request.form["dia_vencimento"])
-        db.session.commit()
-        return redirect(url_for("fixos.listar"))
-
-    return render_template("form_gasto_fixo.html", gasto=gasto, valores=_valores_de_gasto(gasto))
+    gasto.nome = dados["nome"].strip()
+    gasto.valor = float(dados["valor"])
+    gasto.dia_vencimento = int(dados["dia_vencimento"])
+    db.session.commit()
+    return jsonify(gasto.to_dict())
 
 
-@fixos_bp.route("/excluir/<int:id>", methods=["POST"])
+@fixos_bp.route("/<int:id>", methods=["DELETE"])
 def excluir(id):
     gasto = GastoFixo.query.get_or_404(id)
     db.session.delete(gasto)
     db.session.commit()
-    return redirect(url_for("fixos.listar"))
+    return "", 204
 
 
 @fixos_bp.route("/<int:id>/pagar", methods=["POST"])
@@ -98,7 +82,7 @@ def pagar(id):
     pagamento.pago = True
     pagamento.data_pagamento = hoje
     db.session.commit()
-    return redirect(url_for("fixos.listar"))
+    return jsonify({"pago": True})
 
 
 @fixos_bp.route("/<int:id>/desfazer", methods=["POST"])
@@ -111,41 +95,25 @@ def desfazer(id):
         pagamento.pago = False
         pagamento.data_pagamento = None
         db.session.commit()
-    return redirect(url_for("fixos.listar"))
+    return jsonify({"pago": False})
 
 
-def _validar_formulario(form):
-    nome = form.get("nome", "").strip()
-    valor = form.get("valor", "")
-    dia_vencimento = form.get("dia_vencimento", "")
+def _validar(dados):
+    nome = (dados.get("nome") or "").strip()
+    valor = dados.get("valor", "")
+    dia_vencimento = dados.get("dia_vencimento", "")
 
     if not nome:
         return "Nome é obrigatório."
     try:
         if float(valor) <= 0:
             return "Valor precisa ser maior que zero."
-    except ValueError:
+    except (TypeError, ValueError):
         return "Valor inválido."
     try:
         dia = int(dia_vencimento)
         if not 1 <= dia <= 31:
             return "Dia de vencimento precisa ser entre 1 e 31."
-    except ValueError:
+    except (TypeError, ValueError):
         return "Dia de vencimento inválido."
     return None
-
-
-def _valores_padrao():
-    return {"nome": "", "valor": "", "dia_vencimento": ""}
-
-
-def _valores_de_gasto(gasto):
-    return {"nome": gasto.nome, "valor": gasto.valor, "dia_vencimento": gasto.dia_vencimento}
-
-
-def _valores_de_form(form):
-    return {
-        "nome": form.get("nome", ""),
-        "valor": form.get("valor", ""),
-        "dia_vencimento": form.get("dia_vencimento", ""),
-    }
