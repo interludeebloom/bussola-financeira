@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 
-{% block content %}
-  <h2>Resumo — {{ nome_mes }}/{{ ano }}</h2>
+{% block header %}
+  <p class="eyebrow">Painel · {{ nome_mes }} {{ ano }}</p>
+  <h1 class="page-title">Suas finanças, em sincronia</h1>
+{% endblock %}
 
+{% block content %}
   <div class="stat-grid">
     <div class="stat-card">
       <div class="label">Receitas do mês</div>

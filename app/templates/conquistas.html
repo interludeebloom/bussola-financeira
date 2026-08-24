@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block header %}
+  <p class="eyebrow">Conquistas · Selos de sincronização</p>
+  <h1 class="page-title">Suas metas, uma a uma</h1>
+{% endblock %}
+
+{% block content %}
+  {% if not conquistados and not pendentes %}
+    <p>Nenhuma meta cadastrada ainda. <a href="{{ url_for('desejos.listar') }}">Cadastre uma em Metas</a> pra começar a colecionar selos.</p>
+  {% else %}
+    <h2>Conquistadas ({{ conquistados|length }})</h2>
+    {% if conquistados %}
+      <div class="badge-grid">
+        {% for d in conquistados %}
+          <div class="badge unlocked">
+            <div class="badge-seal">
+              <svg viewBox="0 0 100 100" class="hex"><polygon points="50,3 95,25 95,75 50,97 5,75 5,25" /></svg>
+              <svg viewBox="0 0 24 24" class="icon-check"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <strong>{{ d.nome }}</strong>
+            <span class="badge-meta">R$ {{ "%.2f"|format(d.preco) }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>Ainda nenhuma meta conquistada. Guarde dinheiro nas suas metas pra desbloquear o primeiro selo.</p>
+    {% endif %}
+
+    <h2 style="margin-top:2rem">Em andamento ({{ pendentes|length }})</h2>
+    {% if pendentes %}
+      <div class="badge-grid">
+        {% for d in pendentes %}
+          <div class="badge locked">
+            <div class="badge-seal">
+              <svg viewBox="0 0 100 100" class="hex"><polygon points="50,3 95,25 95,75 50,97 5,75 5,25" /></svg>
+              <svg viewBox="0 0 24 24" class="icon-lock"><rect x="6" y="10" width="12" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+            <strong>{{ d.nome }}</strong>
+            <span class="badge-meta">{{ d.progresso_pct }}% · faltam R$ {{ "%.2f"|format(d.falta) }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>Todas as metas cadastradas já foram conquistadas.</p>
+    {% endif %}
+  {% endif %}
+{% endblock %}

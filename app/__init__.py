@@ -15,6 +15,7 @@ def create_app():
     db.init_app(app)
 
     from . import models
+    from .conquistas import conquistas_bp
     from .dashboard import dashboard_bp
     from .desejos import desejos_bp
     from .faturas import faturas_bp
@@ -26,6 +27,12 @@ def create_app():
     app.register_blueprint(fixos_bp)
     app.register_blueprint(desejos_bp)
     app.register_blueprint(faturas_bp)
+    app.register_blueprint(conquistas_bp)
+
+    @app.context_processor
+    def injetar_agora():
+        from datetime import datetime
+        return {"agora": datetime.now()}
 
     with app.app_context():
         db.create_all()
