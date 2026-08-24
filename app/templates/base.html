@@ -130,9 +130,8 @@
     .stat-card .value.positivo { color: var(--accent); }
     .stat-card .value.negativo { color: var(--danger); }
 
-    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
     .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.2rem; box-shadow: var(--shadow); }
-    @media (max-width: 640px) { .chart-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>

@@ -22,6 +22,14 @@ def index():
     total_receitas = sum(t.valor for t in transacoes_mes if t.tipo == "receita")
     total_despesas = sum(t.valor for t in transacoes_mes if t.tipo == "despesa")
 
+    totais_por_categoria = {}
+    for t in transacoes_mes:
+        if t.tipo != "despesa":
+            continue
+        categoria = t.categoria or "Outros"
+        totais_por_categoria[categoria] = totais_por_categoria.get(categoria, 0.0) + t.valor
+    despesas_por_categoria = sorted(totais_por_categoria.items(), key=lambda item: item[1], reverse=True)
+
     desejos = Desejo.query.order_by(Desejo.data_meta).all()
 
     faturas_mes = []
@@ -42,4 +50,5 @@ def index():
         desejos=desejos,
         faturas_mes=faturas_mes,
         total_faturas_aberto=total_faturas_aberto,
+        despesas_por_categoria=despesas_por_categoria,
     )

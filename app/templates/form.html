@@ -16,9 +16,18 @@
 
     <label>
       Tipo
-      <select name="tipo">
+      <select name="tipo" id="tipo">
         <option value="receita" {% if valores.tipo == "receita" %}selected{% endif %}>Receita</option>
         <option value="despesa" {% if valores.tipo == "despesa" %}selected{% endif %}>Despesa</option>
+      </select>
+    </label>
+
+    <label id="campo-categoria">
+      Categoria
+      <select name="categoria">
+        {% for c in categorias %}
+          <option value="{{ c }}" {% if valores.categoria == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
       </select>
     </label>
 
@@ -30,4 +39,16 @@
     <button type="submit">Salvar</button>
     <a href="{{ url_for('main.index') }}">Cancelar</a>
   </form>
+
+  <script>
+    (function () {
+      var tipo = document.getElementById('tipo');
+      var campoCategoria = document.getElementById('campo-categoria');
+      function atualizar() {
+        campoCategoria.style.display = tipo.value === 'despesa' ? 'block' : 'none';
+      }
+      tipo.addEventListener('change', atualizar);
+      atualizar();
+    })();
+  </script>
 {% endblock %}

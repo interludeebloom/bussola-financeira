@@ -31,6 +31,14 @@
       <h3>Faturas em aberto por banco</h3>
       <canvas id="graficoBarra"></canvas>
     </div>
+    <div class="chart-card">
+      <h3>Despesas por categoria</h3>
+      {% if despesas_por_categoria %}
+        <canvas id="graficoCategorias"></canvas>
+      {% else %}
+        <p>Nenhuma despesa categorizada este mês ainda.</p>
+      {% endif %}
+    </div>
   </div>
 
   <h3>Progresso das metas</h3>
@@ -73,5 +81,24 @@
         scales: { y: { beginAtZero: true } }
       }
     });
+
+    {% if despesas_por_categoria %}
+    new Chart(document.getElementById('graficoCategorias'), {
+      type: 'bar',
+      data: {
+        labels: [{% for cat, total in despesas_por_categoria %}{{ cat | tojson }}{{ "," if not loop.last }}{% endfor %}],
+        datasets: [{
+          label: 'Total (R$)',
+          data: [{% for cat, total in despesas_por_categoria %}{{ total }}{{ "," if not loop.last }}{% endfor %}],
+          backgroundColor: ['#0e6e5a', '#34527a', '#b3261e', '#8a5d10', '#6b4fa0', '#2b8a9e', '#a04f8a', '#5b6b64']
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true } }
+      }
+    });
+    {% endif %}
   </script>
 {% endblock %}

@@ -9,6 +9,7 @@ class Transacao(db.Model):
     valor = db.Column(db.Float, nullable=False)
     tipo = db.Column(db.String(8), nullable=False)  # "receita" ou "despesa"
     data = db.Column(db.Date, nullable=False, default=date.today)
+    categoria = db.Column(db.String(40), nullable=True)  # so se aplica a despesas
 
     @property
     def valor_com_sinal(self):
